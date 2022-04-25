@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"path"
 	"strings"
 	"testing"
 )
@@ -48,8 +50,12 @@ func TestRouter_CreateShortLink(t *testing.T) {
 			r.CreateShortLink(w, req)
 			res := w.Result()
 			defer res.Body.Close()
-			resBody, err := io.ReadAll(res.Body)
-			key := string(resBody)
+			b, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			u, err := url.Parse(string(b))
+			key := path.Base(u.Path)
 			if err != nil {
 				t.Fatal(err)
 			}
