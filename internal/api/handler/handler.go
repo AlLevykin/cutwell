@@ -44,9 +44,8 @@ func (r *Router) Redirect(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//w.Header().Set("Location", lnk)
+	w.Header().Set("Location", lnk)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-	w.Write([]byte(lnk))
 }
 
 func (r *Router) CreateShortLink(w http.ResponseWriter, req *http.Request) {
