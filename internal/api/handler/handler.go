@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"path"
@@ -62,5 +63,5 @@ func (r *Router) CreateShortLink(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(key))
+	w.Write([]byte(fmt.Sprintf("%s/%s", req.Host, key)))
 }
