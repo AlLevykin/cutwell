@@ -67,6 +67,7 @@ func (r *Router) CreateShortLink(w http.ResponseWriter, req *http.Request) {
 		Host:   req.Host,
 		Path:   key,
 	}
+	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(u.String()))
 }
