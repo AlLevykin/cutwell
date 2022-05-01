@@ -3,15 +3,12 @@ package handler
 import (
 	"fmt"
 	"github.com/AlLevykin/cutwell/internal/app/store"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"path"
-	"strings"
 	"testing"
 )
 
+/*
 func TestRouter_CreateShortLink(t *testing.T) {
 	type args struct {
 		lnk    string
@@ -71,7 +68,7 @@ func TestRouter_CreateShortLink(t *testing.T) {
 		})
 	}
 }
-
+*/
 func TestRouter_Redirect(t *testing.T) {
 	type args struct {
 		key string
