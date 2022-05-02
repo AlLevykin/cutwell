@@ -238,7 +238,7 @@ func TestRouter_ReadBody(t *testing.T) {
 	}
 }
 
-func TestRouter_UnmarshalJson(t *testing.T) {
+func TestRouter_UnmarshalData(t *testing.T) {
 	type args struct {
 		data interface{}
 	}
@@ -307,15 +307,15 @@ func TestRouter_UnmarshalJson(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
 				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
-				r.UnmarshalJSON(wantHandler).ServeHTTP(w, req.WithContext(ctx))
+				r.UnmarshalData(wantHandler).ServeHTTP(w, req.WithContext(ctx))
 			} else {
-				r.UnmarshalJSON(wantHandler).ServeHTTP(w, req)
+				r.UnmarshalData(wantHandler).ServeHTTP(w, req)
 			}
 		})
 	}
 }
 
-func TestRouter_MarshalJson(t *testing.T) {
+func TestRouter_MarshalData(t *testing.T) {
 	type args struct {
 		data interface{}
 	}
@@ -375,9 +375,9 @@ func TestRouter_MarshalJson(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
 				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
-				r.MarshalJSON(wantHandler).ServeHTTP(w, req.WithContext(ctx))
+				r.MarshalData(wantHandler).ServeHTTP(w, req.WithContext(ctx))
 			} else {
-				r.MarshalJSON(wantHandler).ServeHTTP(w, req)
+				r.MarshalData(wantHandler).ServeHTTP(w, req)
 			}
 		})
 	}

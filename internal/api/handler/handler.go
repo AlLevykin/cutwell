@@ -37,7 +37,7 @@ func NewRouter(ls Links) *Router {
 	}
 	r.Get("/{key}", r.Redirect)
 	r.With(r.ReadBody, r.GetShortLink).Post("/", r.SendPlainText)
-	r.With(r.ReadBody, r.UnmarshalJSON, r.GetShortLink, r.MarshalJSON).Post("/api/shorten", r.SendJSON)
+	r.With(r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData).Post("/api/shorten", r.SendJSON)
 	return r
 }
 
@@ -53,7 +53,7 @@ func (r *Router) ReadBody(next http.Handler) http.Handler {
 	})
 }
 
-func (r *Router) MarshalJSON(next http.Handler) http.Handler {
+func (r *Router) MarshalData(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		data := req.Context().Value(ContextKey("DATA"))
 		if data == nil {
@@ -74,7 +74,7 @@ func (r *Router) MarshalJSON(next http.Handler) http.Handler {
 	})
 }
 
-func (r *Router) UnmarshalJSON(next http.Handler) http.Handler {
+func (r *Router) UnmarshalData(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		data := req.Context().Value(ContextKey("DATA"))
 		if data == nil {
