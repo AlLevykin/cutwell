@@ -58,14 +58,15 @@ func (r *Router) MarshalJson(next http.Handler) http.Handler {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
 		}
-		lnk := ShortenLink{
-			Result: data.(string),
-		}
-		json, err := json.Marshal(&lnk)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		res, ok := data.(string)
+		if !ok {
+			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
 		}
+		lnk := ShortenLink{
+			Result: res,
+		}
+		json, _ := json.Marshal(&lnk)
 		ctx := context.WithValue(req.Context(), "DATA", string(json))
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
@@ -78,8 +79,13 @@ func (r *Router) UnmarshalJson(next http.Handler) http.Handler {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
 		}
+		str, ok := data.(string)
+		if !ok {
+			http.Error(w, "can't get context data", http.StatusBadRequest)
+			return
+		}
 		lnk := Link{}
-		err := json.Unmarshal([]byte(data.(string)), &lnk)
+		err := json.Unmarshal([]byte(str), &lnk)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -96,7 +102,12 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
 		}
-		key, err := r.ls.Create(req.Context(), data.(string))
+		str, ok := data.(string)
+		if !ok {
+			http.Error(w, "can't get context data", http.StatusBadRequest)
+			return
+		}
+		key, err := r.ls.Create(req.Context(), str)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -117,9 +128,14 @@ func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "can't get context data", http.StatusBadRequest)
 		return
 	}
+	str, ok := data.(string)
+	if !ok {
+		http.Error(w, "can't get context data", http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(data.(string)))
+	w.Write([]byte(str))
 }
 
 func (r *Router) SendJson(w http.ResponseWriter, req *http.Request) {
@@ -128,9 +144,14 @@ func (r *Router) SendJson(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "can't get context data", http.StatusBadRequest)
 		return
 	}
+	str, ok := data.(string)
+	if !ok {
+		http.Error(w, "can't get context data", http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(data.(string)))
+	w.Write([]byte(str))
 }
 
 func (r *Router) Redirect(w http.ResponseWriter, req *http.Request) {
