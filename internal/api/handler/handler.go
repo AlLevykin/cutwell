@@ -10,13 +10,15 @@ import (
 	"path"
 )
 
+type ContextKey string
+
 type Links interface {
 	Create(ctx context.Context, lnk string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
 }
 
 type Link struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
 
 type ShortenLink struct {
@@ -35,7 +37,7 @@ func NewRouter(ls Links) *Router {
 	}
 	r.Get("/{key}", r.Redirect)
 	r.With(r.ReadBody, r.GetShortLink).Post("/", r.SendPlainText)
-	r.With(r.ReadBody, r.UnmarshalJson, r.GetShortLink, r.MarshalJson).Post("/api/shorten", r.SendJson)
+	r.With(r.ReadBody, r.UnmarshalJSON, r.GetShortLink, r.MarshalJSON).Post("/api/shorten", r.SendJSON)
 	return r
 }
 
@@ -46,14 +48,14 @@ func (r *Router) ReadBody(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ctx := context.WithValue(req.Context(), "DATA", string(buf))
+		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(buf))
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
-func (r *Router) MarshalJson(next http.Handler) http.Handler {
+func (r *Router) MarshalJSON(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		data := req.Context().Value("DATA")
+		data := req.Context().Value(ContextKey("DATA"))
 		if data == nil {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
@@ -67,14 +69,14 @@ func (r *Router) MarshalJson(next http.Handler) http.Handler {
 			Result: res,
 		}
 		json, _ := json.Marshal(&lnk)
-		ctx := context.WithValue(req.Context(), "DATA", string(json))
+		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
-func (r *Router) UnmarshalJson(next http.Handler) http.Handler {
+func (r *Router) UnmarshalJSON(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		data := req.Context().Value("DATA")
+		data := req.Context().Value(ContextKey("DATA"))
 		if data == nil {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
@@ -90,14 +92,14 @@ func (r *Router) UnmarshalJson(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ctx := context.WithValue(req.Context(), "DATA", lnk.Url)
+		ctx := context.WithValue(req.Context(), ContextKey("DATA"), lnk.URL)
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
 func (r *Router) GetShortLink(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		data := req.Context().Value("DATA")
+		data := req.Context().Value(ContextKey("DATA"))
 		if data == nil {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
@@ -117,13 +119,13 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			Host:   req.Host,
 			Path:   key,
 		}
-		ctx := context.WithValue(req.Context(), "DATA", u.String())
+		ctx := context.WithValue(req.Context(), ContextKey("DATA"), u.String())
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
 func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
-	data := req.Context().Value("DATA")
+	data := req.Context().Value(ContextKey("DATA"))
 	if data == nil {
 		http.Error(w, "can't get context data", http.StatusBadRequest)
 		return
@@ -138,8 +140,8 @@ func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(str))
 }
 
-func (r *Router) SendJson(w http.ResponseWriter, req *http.Request) {
-	data := req.Context().Value("DATA")
+func (r *Router) SendJSON(w http.ResponseWriter, req *http.Request) {
+	data := req.Context().Value(ContextKey("DATA"))
 	if data == nil {
 		http.Error(w, "can't get context data", http.StatusBadRequest)
 		return

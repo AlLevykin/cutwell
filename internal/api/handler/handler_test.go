@@ -74,7 +74,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
-				ctx := context.WithValue(req.Context(), "DATA", tt.args.data)
+				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
 				r.SendPlainText(w, req.WithContext(ctx))
 			} else {
 				r.SendPlainText(w, req)
@@ -153,10 +153,10 @@ func TestRouter_SendJson(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
-				ctx := context.WithValue(req.Context(), "DATA", tt.args.data)
-				r.SendJson(w, req.WithContext(ctx))
+				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
+				r.SendJSON(w, req.WithContext(ctx))
 			} else {
-				r.SendJson(w, req)
+				r.SendJSON(w, req)
 			}
 			res := w.Result()
 			defer res.Body.Close()
@@ -221,7 +221,7 @@ func TestRouter_ReadBody(t *testing.T) {
 			w := httptest.NewRecorder()
 			br := httptest.NewRequest(http.MethodPost, "/", body)
 			wantHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				data := req.Context().Value("DATA")
+				data := req.Context().Value(ContextKey("DATA"))
 				if data == nil {
 					t.Error("DATA not present")
 				}
@@ -290,7 +290,7 @@ func TestRouter_UnmarshalJson(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wantHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				data := req.Context().Value("DATA")
+				data := req.Context().Value(ContextKey("DATA"))
 				if data == nil {
 					t.Error("DATA not present")
 				}
@@ -306,10 +306,10 @@ func TestRouter_UnmarshalJson(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
-				ctx := context.WithValue(req.Context(), "DATA", tt.args.data)
-				r.UnmarshalJson(wantHandler).ServeHTTP(w, req.WithContext(ctx))
+				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
+				r.UnmarshalJSON(wantHandler).ServeHTTP(w, req.WithContext(ctx))
 			} else {
-				r.UnmarshalJson(wantHandler).ServeHTTP(w, req)
+				r.UnmarshalJSON(wantHandler).ServeHTTP(w, req)
 			}
 		})
 	}
@@ -358,7 +358,7 @@ func TestRouter_MarshalJson(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wantHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				data := req.Context().Value("DATA")
+				data := req.Context().Value(ContextKey("DATA"))
 				if data == nil {
 					t.Error("DATA not present")
 				}
@@ -374,10 +374,10 @@ func TestRouter_MarshalJson(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
-				ctx := context.WithValue(req.Context(), "DATA", tt.args.data)
-				r.MarshalJson(wantHandler).ServeHTTP(w, req.WithContext(ctx))
+				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
+				r.MarshalJSON(wantHandler).ServeHTTP(w, req.WithContext(ctx))
 			} else {
-				r.MarshalJson(wantHandler).ServeHTTP(w, req)
+				r.MarshalJSON(wantHandler).ServeHTTP(w, req)
 			}
 		})
 	}
@@ -417,7 +417,7 @@ func TestRouter_GetShortLink(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wantHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				data := req.Context().Value("DATA")
+				data := req.Context().Value(ContextKey("DATA"))
 				if data == nil {
 					t.Error("DATA not present")
 				}
@@ -439,7 +439,7 @@ func TestRouter_GetShortLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
-				ctx := context.WithValue(req.Context(), "DATA", tt.args.data)
+				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
 				r.GetShortLink(wantHandler).ServeHTTP(w, req.WithContext(ctx))
 			} else {
 				r.GetShortLink(wantHandler).ServeHTTP(w, req)
