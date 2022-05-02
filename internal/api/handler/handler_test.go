@@ -22,7 +22,7 @@ func (m *mockReader) Read(p []byte) (n int, err error) {
 
 func TestRouter_SendPlainText(t *testing.T) {
 	type args struct {
-		data any
+		data interface{}
 	}
 	type want struct {
 		code        int
@@ -101,7 +101,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 
 func TestRouter_SendJson(t *testing.T) {
 	type args struct {
-		data any
+		data interface{}
 	}
 	type want struct {
 		code        int
@@ -240,7 +240,7 @@ func TestRouter_ReadBody(t *testing.T) {
 
 func TestRouter_UnmarshalJson(t *testing.T) {
 	type args struct {
-		data any
+		data interface{}
 	}
 	type want struct {
 		data string
@@ -317,7 +317,7 @@ func TestRouter_UnmarshalJson(t *testing.T) {
 
 func TestRouter_MarshalJson(t *testing.T) {
 	type args struct {
-		data any
+		data interface{}
 	}
 	type want struct {
 		data string
@@ -385,7 +385,7 @@ func TestRouter_MarshalJson(t *testing.T) {
 
 func TestRouter_GetShortLink(t *testing.T) {
 	type args struct {
-		data   any
+		data   interface{}
 		keyLen int
 	}
 	tests := []struct {
