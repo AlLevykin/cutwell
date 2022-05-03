@@ -153,3 +153,35 @@ func TestNewLinkStore(t *testing.T) {
 		})
 	}
 }
+
+func TestLinkStore_Host(t *testing.T) {
+	type fields struct {
+		BaseURL string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			"Host",
+			fields{"127.0.0.1:8080"},
+			"127.0.0.1:8080",
+		},
+		{
+			"Host",
+			fields{"http://127.0.0.1:8080"},
+			"127.0.0.1:8080",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ls := &LinkStore{
+				BaseURL: tt.fields.BaseURL,
+			}
+			if got := ls.Host(); got != tt.want {
+				t.Errorf("Host() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
