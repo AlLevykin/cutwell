@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/AlLevykin/cutwell/internal/utils"
+	"net/url"
 	"sync"
 )
 
@@ -28,7 +29,11 @@ func NewLinkStore(c Config) *LinkStore {
 }
 
 func (ls *LinkStore) Host() string {
-	return ls.BaseURL
+	u, err := url.Parse(ls.BaseURL)
+	if err != nil {
+		return ls.BaseURL
+	}
+	return u.Host
 }
 
 func (ls *LinkStore) Create(ctx context.Context, lnk string) (string, error) {
