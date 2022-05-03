@@ -116,8 +116,9 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			return
 		}
 		u := &url.URL{
-			Host: r.ls.Host(),
-			Path: key,
+			Scheme: "http",
+			Host:   r.ls.Host(),
+			Path:   key,
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), u.String())
 		next.ServeHTTP(w, req.WithContext(ctx))
