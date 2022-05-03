@@ -13,6 +13,7 @@ import (
 type ContextKey string
 
 type Links interface {
+	Host() string
 	Create(ctx context.Context, lnk string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
 }
@@ -116,7 +117,7 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 		}
 		u := &url.URL{
 			Scheme: "http",
-			Host:   req.Host,
+			Host:   r.ls.Host(),
 			Path:   key,
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), u.String())

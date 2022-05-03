@@ -137,12 +137,17 @@ func TestNewLinkStore(t *testing.T) {
 			&LinkStore{
 				Storage:   make(map[string]string),
 				KeyLength: 9,
+				BaseURL:   "127.0.0.1:8080",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewLinkStore(tt.keyLength); !reflect.DeepEqual(got, tt.want) {
+			cfg := Config{
+				KeyLength: tt.keyLength,
+				BaseURL:   "127.0.0.1:8080",
+			}
+			if got := NewLinkStore(cfg); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewLinkStore() = %v, want %v", got, tt.want)
 			}
 		})

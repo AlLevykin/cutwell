@@ -7,17 +7,28 @@ import (
 	"sync"
 )
 
+type Config struct {
+	BaseURL   string
+	KeyLength int
+}
+
 type LinkStore struct {
 	sync.Mutex
 	Storage   map[string]string
 	KeyLength int
+	BaseURL   string
 }
 
-func NewLinkStore(kl int) *LinkStore {
+func NewLinkStore(c Config) *LinkStore {
 	return &LinkStore{
 		Storage:   make(map[string]string),
-		KeyLength: kl,
+		KeyLength: c.KeyLength,
+		BaseURL:   c.BaseURL,
 	}
+}
+
+func (ls *LinkStore) Host() string {
+	return ls.BaseURL
 }
 
 func (ls *LinkStore) Create(ctx context.Context, lnk string) (string, error) {
