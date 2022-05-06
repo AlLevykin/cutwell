@@ -13,8 +13,9 @@ import (
 )
 
 type config struct {
-	Addr    string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
-	BaseURL string `env:"BASE_URL"  envDefault:"127.0.0.1:8080"`
+	Addr            string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+	BaseURL         string `env:"BASE_URL"  envDefault:"127.0.0.1:8080"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
 func ServeApp(ctx context.Context, wg *sync.WaitGroup, srv *server.Server) {

@@ -494,7 +494,7 @@ func TestRouter_Redirect(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s", tt.args.key), nil)
 			w := httptest.NewRecorder()
 			ls := &store.LinkStore{
-				Storage: map[string]string{
+				Mem: map[string]string{
 					tt.want.key: tt.want.lnk,
 				},
 				KeyLength: len(tt.want.key),
