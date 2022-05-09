@@ -3,8 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/AlLevykin/cutwell/internal/utils"
-	"io"
 	"net/url"
 	"sync"
 )
@@ -16,16 +16,16 @@ type Config struct {
 
 type LinkStore struct {
 	sync.Mutex
-	Storage   io.ReadWriteCloser
+	File      string
 	Mem       map[string]string
 	KeyLength int
 	BaseURL   string
 }
 
-func NewLinkStore(c Config, s io.ReadWriteCloser) *LinkStore {
+func NewLinkStore(c Config, fileName string) *LinkStore {
 	return &LinkStore{
-		Storage:   s,
-		Mem:       make(map[string]string),
+		File:      fileName,
+		Mem:       FileToMap(fileName),
 		KeyLength: c.KeyLength,
 		BaseURL:   c.BaseURL,
 	}
@@ -68,4 +68,12 @@ func (ls *LinkStore) Get(ctx context.Context, key string) (string, error) {
 		return lnk, nil
 	}
 	return "", sql.ErrNoRows
+}
+
+func (ls *LinkStore) Save() error {
+	if err := MapToFile(ls.Mem, ls.File); err != nil {
+		return err
+	}
+	fmt.Println(len(ls.Mem))
+	return nil
 }

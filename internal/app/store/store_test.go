@@ -147,7 +147,7 @@ func TestNewLinkStore(t *testing.T) {
 				KeyLength: tt.keyLength,
 				BaseURL:   "127.0.0.1:8080",
 			}
-			if got := NewLinkStore(cfg); !reflect.DeepEqual(got, tt.want) {
+			if got := NewLinkStore(cfg, ""); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewLinkStore() = %v, want %v", got, tt.want)
 			}
 		})

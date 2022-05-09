@@ -35,7 +35,9 @@ func main() {
 		store.Config{
 			KeyLength: 9,
 			BaseURL:   cfg.BaseURL,
-		})
+		},
+		cfg.FileStoragePath)
+	defer ls.Save()
 	r := handler.NewRouter(ls)
 	srv := server.NewServer(
 		server.Config{

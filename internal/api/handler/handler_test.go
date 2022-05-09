@@ -438,7 +438,7 @@ func TestRouter_GetShortLink(t *testing.T) {
 				KeyLength: tt.args.keyLen,
 				BaseURL:   "127.0.0.1:8080",
 			}
-			ls := store.NewLinkStore(cfg)
+			ls := store.NewLinkStore(cfg, "")
 			r := NewRouter(ls)
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
