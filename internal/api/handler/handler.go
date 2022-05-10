@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
@@ -44,7 +45,19 @@ func NewRouter(ls Links) *Router {
 
 func (r *Router) ReadBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		buf, err := io.ReadAll(req.Body)
+		var reader io.Reader
+		if req.Header.Get(`Content-Encoding`) == `gzip` {
+			gz, err := gzip.NewReader(req.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			reader = gz
+			defer gz.Close()
+		} else {
+			reader = req.Body
+		}
+		buf, err := io.ReadAll(reader)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
