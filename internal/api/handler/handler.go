@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 )
 
 type ContextKey string
@@ -38,8 +39,8 @@ func NewRouter(ls Links) *Router {
 		ls:  ls,
 	}
 	r.Get("/{key}", r.Redirect)
-	r.With(r.ReadBody, r.GetShortLink).Post("/", r.SendPlainText)
-	r.With(r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData).Post("/api/shorten", r.SendJSON)
+	r.With(r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
+	r.With(r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
 	return r
 }
 
@@ -135,6 +136,25 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), u.String())
 		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
+func (r *Router) Compress(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") {
+			next.ServeHTTP(w, req)
+			return
+		}
+
+		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
+		if err != nil {
+			io.WriteString(w, err.Error())
+			return
+		}
+		defer gz.Close()
+
+		w.Header().Set("Content-Encoding", "gzip")
+		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, req)
 	})
 }
 
