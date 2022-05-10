@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/AlLevykin/cutwell/internal/utils"
 	"net/url"
 	"sync"
@@ -74,6 +73,5 @@ func (ls *LinkStore) Save() error {
 	if err := MapToFile(ls.Mem, ls.File); err != nil {
 		return err
 	}
-	fmt.Println(len(ls.Mem))
 	return nil
 }

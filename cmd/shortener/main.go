@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/AlLevykin/cutwell/internal/api/server"
 	"github.com/AlLevykin/cutwell/internal/app/store"
@@ -27,9 +28,11 @@ func ServeApp(ctx context.Context, wg *sync.WaitGroup, srv *server.Server) {
 
 func main() {
 	cfg := config{}
-	if err := env.Parse(&cfg); err != nil {
-		panic(err)
-	}
+	env.Parse(&cfg)
+	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server adress")
+	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base url")
+	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	ls := store.NewLinkStore(
 		store.Config{
