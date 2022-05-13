@@ -83,7 +83,11 @@ func (r *Router) MarshalData(next http.Handler) http.Handler {
 		lnk := ShortenLink{
 			Result: res,
 		}
-		json, _ := json.Marshal(&lnk)
+		json, err := json.Marshal(&lnk)
+		if err != nil {
+			http.Error(w, "can't get context data", http.StatusBadRequest)
+			return
+		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
