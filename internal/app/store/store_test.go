@@ -48,7 +48,7 @@ func TestLinkStore_Create(t *testing.T) {
 				ctx = context.Background()
 			}
 			ls := &LinkStore{
-				Storage:   tt.fields.storage,
+				Mem:       tt.fields.storage,
 				KeyLength: tt.fields.keyLen,
 			}
 			got, err := ls.Create(ctx, tt.args.lnk)
@@ -111,7 +111,7 @@ func TestLinkStore_Get(t *testing.T) {
 				ctx = context.Background()
 			}
 			ls := &LinkStore{
-				Storage: tt.fields.storage,
+				Mem: tt.fields.storage,
 			}
 			got, err := ls.Get(ctx, tt.args.key)
 			if (err != nil) != tt.wantErr {
@@ -135,15 +135,52 @@ func TestNewLinkStore(t *testing.T) {
 			"ok",
 			9,
 			&LinkStore{
-				Storage:   make(map[string]string),
+				Mem:       make(map[string]string),
 				KeyLength: 9,
+				BaseURL:   "127.0.0.1:8080",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewLinkStore(tt.keyLength); !reflect.DeepEqual(got, tt.want) {
+			cfg := Config{
+				KeyLength: tt.keyLength,
+				BaseURL:   "127.0.0.1:8080",
+			}
+			if got := NewLinkStore(cfg, ""); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewLinkStore() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLinkStore_Host(t *testing.T) {
+	type fields struct {
+		BaseURL string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			"Host",
+			fields{"127.0.0.1:8080"},
+			"127.0.0.1:8080",
+		},
+		{
+			"Host",
+			fields{"http://127.0.0.1:8080"},
+			"127.0.0.1:8080",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ls := &LinkStore{
+				BaseURL: tt.fields.BaseURL,
+			}
+			if got := ls.Host(); got != tt.want {
+				t.Errorf("Host() = %v, want %v", got, tt.want)
 			}
 		})
 	}
