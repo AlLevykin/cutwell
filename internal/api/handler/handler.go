@@ -66,8 +66,7 @@ func (r *Router) CheckSession(next http.Handler) http.Handler {
 			http.Error(w, "can't get user id", http.StatusBadRequest)
 			return
 		}
-		cookie, err := req.Cookie("cutwell-session")
-		if err != nil {
+		if cookie, err := req.Cookie("cutwell-session"); err != nil {
 			cookie = &http.Cookie{
 				Name:  "cutwell-session",
 				Value: uid,
