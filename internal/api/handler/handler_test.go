@@ -2,13 +2,9 @@ package handler
 
 import (
 	"context"
-	"fmt"
-	"github.com/AlLevykin/cutwell/internal/app/store"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"path"
 	"strings"
 	"testing"
 )
@@ -378,133 +374,6 @@ func TestRouter_MarshalData(t *testing.T) {
 				r.MarshalData(wantHandler).ServeHTTP(w, req.WithContext(ctx))
 			} else {
 				r.MarshalData(wantHandler).ServeHTTP(w, req)
-			}
-		})
-	}
-}
-
-func TestRouter_GetShortLink(t *testing.T) {
-	type args struct {
-		data   interface{}
-		keyLen int
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			"ok",
-			args{
-				"ya.ru",
-				9,
-			},
-		},
-		{
-			"wrong data type",
-			args{
-				100,
-				9,
-			},
-		},
-		{
-			"nil",
-			args{
-				nil,
-				9,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wantHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				data := req.Context().Value(ContextKey("DATA"))
-				if data == nil {
-					t.Error("DATA not present")
-				}
-				str, ok := data.(string)
-				if !ok {
-					t.Error("not string")
-				}
-				u, err := url.Parse(str)
-				if err != nil {
-					t.Error("wrong url")
-				}
-				key := path.Base(u.Path)
-				if len(key) != tt.args.keyLen {
-					t.Error("wrong short link")
-				}
-			})
-			cfg := store.Config{
-				KeyLength: tt.args.keyLen,
-				BaseURL:   "127.0.0.1:8080",
-			}
-			ls := store.NewLinkStore(cfg, "")
-			r := NewRouter(ls)
-			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/", nil)
-			if tt.args.data != nil {
-				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
-				r.GetShortLink(wantHandler).ServeHTTP(w, req.WithContext(ctx))
-			} else {
-				r.GetShortLink(wantHandler).ServeHTTP(w, req)
-			}
-		})
-	}
-}
-
-func TestRouter_Redirect(t *testing.T) {
-	type args struct {
-		key string
-	}
-	type want struct {
-		code int
-		key  string
-		lnk  string
-	}
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			"ok",
-			args{
-				key: "xvtWzBTea",
-			},
-			want{
-				code: http.StatusTemporaryRedirect,
-				key:  "xvtWzBTea",
-				lnk:  "http://ctqplvcsifak.biz/jqepl7eormvew4",
-			},
-		},
-		{
-			"bad request",
-			args{
-				key: "xvtWzBTea",
-			},
-			want{
-				code: http.StatusBadRequest,
-				key:  "111111111",
-				lnk:  "http://ctqplvcsifak.biz/jqepl7eormvew4",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s", tt.args.key), nil)
-			w := httptest.NewRecorder()
-			ls := &store.LinkStore{
-				Mem: map[string]string{
-					tt.want.key: tt.want.lnk,
-				},
-				KeyLength: len(tt.want.key),
-			}
-			r := NewRouter(ls)
-			r.Redirect(w, req)
-			res := w.Result()
-			defer res.Body.Close()
-			if res.StatusCode != tt.want.code {
-				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
 			}
 		})
 	}

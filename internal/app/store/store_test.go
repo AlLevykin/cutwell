@@ -9,11 +9,13 @@ import (
 func TestLinkStore_Create(t *testing.T) {
 	type fields struct {
 		storage map[string]string
+		users   map[string]string
 		keyLen  int
 	}
 	type args struct {
 		withContext bool
 		lnk         string
+		u           string
 	}
 	tests := []struct {
 		name    string
@@ -24,15 +26,23 @@ func TestLinkStore_Create(t *testing.T) {
 	}{
 		{
 			"ok",
-			fields{map[string]string{}, 9},
-			args{false, "ya.ru"},
+			fields{
+				map[string]string{},
+				map[string]string{},
+				9,
+			},
+			args{false, "ya.ru", "000001"},
 			9,
 			false,
 		},
 		{
 			"context done",
-			fields{map[string]string{}, 9},
-			args{true, "ya.ru"},
+			fields{
+				map[string]string{},
+				map[string]string{},
+				9,
+			},
+			args{true, "ya.ru", "000001"},
 			0,
 			true,
 		},
@@ -49,9 +59,10 @@ func TestLinkStore_Create(t *testing.T) {
 			}
 			ls := &LinkStore{
 				Mem:       tt.fields.storage,
+				Users:     tt.fields.users,
 				KeyLength: tt.fields.keyLen,
 			}
-			got, err := ls.Create(ctx, tt.args.lnk)
+			got, err := ls.Create(ctx, tt.args.lnk, tt.args.u)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -136,6 +147,7 @@ func TestNewLinkStore(t *testing.T) {
 			9,
 			&LinkStore{
 				Mem:       make(map[string]string),
+				Users:     make(map[string]string),
 				KeyLength: 9,
 				BaseURL:   "127.0.0.1:8080",
 			},

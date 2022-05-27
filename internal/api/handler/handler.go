@@ -16,8 +16,9 @@ type ContextKey string
 
 type Links interface {
 	Host() string
-	Create(ctx context.Context, lnk string) (string, error)
+	Create(ctx context.Context, lnk string, u string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
+	GetUrlList(ctx context.Context, u string) ([]Item, error)
 }
 
 type Link struct {
@@ -26,6 +27,11 @@ type Link struct {
 
 type ShortenLink struct {
 	Result string `json:"result"`
+}
+
+type Item struct {
+	ShortURL string `json:"short_url"`
+	URL      string `json:"original_url"`
 }
 
 type Router struct {
@@ -39,9 +45,37 @@ func NewRouter(ls Links) *Router {
 		ls:  ls,
 	}
 	r.Get("/{key}", r.Redirect)
-	r.With(r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
-	r.With(r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
+	r.With(r.Auth, r.CheckSession, r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
+	r.With(r.Auth, r.CheckSession, r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
+	r.With(r.Auth, r.CheckSession, r.GetUrls, r.Compress).Get("/api/user/urls", r.SendJSON)
 	return r
+}
+
+func (r *Router) Auth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		uid := "00000001"
+		ctx := context.WithValue(req.Context(), ContextKey("USERID"), uid)
+		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
+func (r *Router) CheckSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		uid, ok := req.Context().Value(ContextKey("USERID")).(string)
+		if !ok || len(uid) == 0 {
+			http.Error(w, "can't get user id", http.StatusBadRequest)
+			return
+		}
+		cookie, err := req.Cookie("cutwell-session")
+		if err != nil {
+			cookie = &http.Cookie{
+				Name:  "cutwell-session",
+				Value: uid,
+			}
+			http.SetCookie(w, cookie)
+		}
+		next.ServeHTTP(w, req)
+	})
 }
 
 func (r *Router) ReadBody(next http.Handler) http.Handler {
@@ -118,6 +152,11 @@ func (r *Router) UnmarshalData(next http.Handler) http.Handler {
 
 func (r *Router) GetShortLink(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		uid, ok := req.Context().Value(ContextKey("USERID")).(string)
+		if !ok || len(uid) == 0 {
+			http.Error(w, "can't get user id", http.StatusBadRequest)
+			return
+		}
 		data := req.Context().Value(ContextKey("DATA"))
 		if data == nil {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
@@ -128,7 +167,7 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			http.Error(w, "can't get context data", http.StatusBadRequest)
 			return
 		}
-		key, err := r.ls.Create(req.Context(), str)
+		key, err := r.ls.Create(req.Context(), str, uid)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -159,6 +198,28 @@ func (r *Router) Compress(next http.Handler) http.Handler {
 
 		w.Header().Set("Content-Encoding", "gzip")
 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, req)
+	})
+}
+
+func (r *Router) GetUrls(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		uid, ok := req.Context().Value(ContextKey("USERID")).(string)
+		if !ok || len(uid) == 0 {
+			http.Error(w, "can't get user id", http.StatusBadRequest)
+			return
+		}
+		lnks, err := r.ls.GetUrlList(req.Context(), uid)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNoContent)
+			return
+		}
+		json, err := json.Marshal(&lnks)
+		if err != nil {
+			http.Error(w, "can't get context data", http.StatusNoContent)
+			return
+		}
+		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
+		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
