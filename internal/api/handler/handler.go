@@ -45,35 +45,26 @@ func NewRouter(ls Links) *Router {
 		ls:  ls,
 	}
 	r.Get("/{key}", r.Redirect)
-	r.With(r.Auth, r.CheckSession, r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
-	r.With(r.Auth, r.CheckSession, r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
-	r.With(r.Auth, r.CheckSession, r.GetUrls, r.Compress).Get("/api/user/urls", r.SendJSON)
+	r.With(r.CheckSession, r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
+	r.With(r.CheckSession, r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
+	r.With(r.CheckSession, r.GetUrls, r.Compress).Get("/api/user/urls", r.SendJSON)
 	return r
-}
-
-func (r *Router) Auth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		uid := "00000001"
-		ctx := context.WithValue(req.Context(), ContextKey("USERID"), uid)
-		next.ServeHTTP(w, req.WithContext(ctx))
-	})
 }
 
 func (r *Router) CheckSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		uid, ok := req.Context().Value(ContextKey("USERID")).(string)
-		if !ok || len(uid) == 0 {
-			http.Error(w, "can't get user id", http.StatusBadRequest)
-			return
-		}
+		uid := "00000001"
 		if cookie, err := req.Cookie("cutwell-session"); err != nil {
 			cookie = &http.Cookie{
 				Name:  "cutwell-session",
 				Value: uid,
 			}
 			http.SetCookie(w, cookie)
+		} else {
+			uid = cookie.String()
 		}
-		next.ServeHTTP(w, req)
+		ctx := context.WithValue(req.Context(), ContextKey("USERID"), uid)
+		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
