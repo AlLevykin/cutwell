@@ -73,7 +73,7 @@ func (ls *LinkStore) Get(ctx context.Context, key string) (string, error) {
 	return "", sql.ErrNoRows
 }
 
-func (ls *LinkStore) GetUrlList(ctx context.Context, u string) ([]handler.Item, error) {
+func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, error) {
 	ls.Lock()
 	defer ls.Unlock()
 
@@ -87,14 +87,14 @@ func (ls *LinkStore) GetUrlList(ctx context.Context, u string) ([]handler.Item, 
 
 	for lnk, user := range ls.Users {
 		if user == u {
-			shortUrl := &url.URL{
+			shortURL := &url.URL{
 				Scheme: "http",
 				Host:   ls.Host(),
 				Path:   lnk,
 			}
 			result = append(result,
 				handler.Item{
-					ShortURL: shortUrl.String(),
+					ShortURL: shortURL.String(),
 					URL:      ls.Mem[lnk],
 				},
 			)

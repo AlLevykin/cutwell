@@ -18,7 +18,7 @@ type Links interface {
 	Host() string
 	Create(ctx context.Context, lnk string, u string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
-	GetUrlList(ctx context.Context, user string) ([]Item, error)
+	GetURLList(ctx context.Context, user string) ([]Item, error)
 }
 
 type Link struct {
@@ -61,7 +61,7 @@ func (r *Router) CheckSession(next http.Handler) http.Handler {
 			}
 			http.SetCookie(w, cookie)
 		} else {
-			uid = cookie.String()
+			uid = cookie.Value
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("USERID"), uid)
 		next.ServeHTTP(w, req.WithContext(ctx))
@@ -199,7 +199,7 @@ func (r *Router) GetUrls(next http.Handler) http.Handler {
 			http.Error(w, "can't get user id", http.StatusBadRequest)
 			return
 		}
-		lnks, err := r.ls.GetUrlList(req.Context(), uid)
+		lnks, err := r.ls.GetURLList(req.Context(), uid)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNoContent)
 			return
