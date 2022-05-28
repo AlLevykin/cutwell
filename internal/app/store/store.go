@@ -85,12 +85,17 @@ func (ls *LinkStore) GetUrlList(ctx context.Context, u string) ([]handler.Item, 
 
 	result := make([]handler.Item, 0)
 
-	for url, user := range ls.Users {
+	for lnk, user := range ls.Users {
 		if user == u {
+			shortUrl := &url.URL{
+				Scheme: "http",
+				Host:   ls.Host(),
+				Path:   lnk,
+			}
 			result = append(result,
 				handler.Item{
-					ShortURL: url,
-					URL:      ls.Mem[url],
+					ShortURL: shortUrl.String(),
+					URL:      ls.Mem[lnk],
 				},
 			)
 		}

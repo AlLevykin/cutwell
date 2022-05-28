@@ -18,7 +18,8 @@ func (m *mockReader) Read(p []byte) (n int, err error) {
 
 func TestRouter_SendPlainText(t *testing.T) {
 	type args struct {
-		data interface{}
+		data   interface{}
+		status int
 	}
 	type want struct {
 		code        int
@@ -34,6 +35,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 			"ok",
 			args{
 				"data",
+				http.StatusCreated,
 			},
 			want{
 				code:        http.StatusCreated,
@@ -45,6 +47,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 			"nil",
 			args{
 				nil,
+				0,
 			},
 			want{
 				code:        http.StatusBadRequest,
@@ -56,6 +59,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 			"wrong data type",
 			args{
 				100,
+				0,
 			},
 			want{
 				code:        http.StatusBadRequest,
@@ -71,6 +75,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
 				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
+				ctx = context.WithValue(ctx, ContextKey("STATUS"), tt.args.status)
 				r.SendPlainText(w, req.WithContext(ctx))
 			} else {
 				r.SendPlainText(w, req)
@@ -97,7 +102,8 @@ func TestRouter_SendPlainText(t *testing.T) {
 
 func TestRouter_SendJson(t *testing.T) {
 	type args struct {
-		data interface{}
+		data   interface{}
+		status int
 	}
 	type want struct {
 		code        int
@@ -113,6 +119,7 @@ func TestRouter_SendJson(t *testing.T) {
 			"ok",
 			args{
 				"{\"result\":\"http://localhost:8080/BvMIYOqSF\"}",
+				http.StatusCreated,
 			},
 			want{
 				code:        http.StatusCreated,
@@ -124,6 +131,7 @@ func TestRouter_SendJson(t *testing.T) {
 			"nil",
 			args{
 				nil,
+				0,
 			},
 			want{
 				code:        http.StatusBadRequest,
@@ -135,6 +143,7 @@ func TestRouter_SendJson(t *testing.T) {
 			"wrong data type",
 			args{
 				100,
+				0,
 			},
 			want{
 				code:        http.StatusBadRequest,
@@ -150,6 +159,7 @@ func TestRouter_SendJson(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
 				ctx := context.WithValue(req.Context(), ContextKey("DATA"), tt.args.data)
+				ctx = context.WithValue(ctx, ContextKey("STATUS"), tt.args.status)
 				r.SendJSON(w, req.WithContext(ctx))
 			} else {
 				r.SendJSON(w, req)

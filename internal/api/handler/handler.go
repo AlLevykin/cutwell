@@ -18,7 +18,7 @@ type Links interface {
 	Host() string
 	Create(ctx context.Context, lnk string, u string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
-	GetUrlList(ctx context.Context, u string) ([]Item, error)
+	GetUrlList(ctx context.Context, user string) ([]Item, error)
 }
 
 type Link struct {
@@ -177,6 +177,7 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			Path:   key,
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), u.String())
+		ctx = context.WithValue(ctx, ContextKey("STATUS"), http.StatusCreated)
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
@@ -218,11 +219,16 @@ func (r *Router) GetUrls(next http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
+		ctx = context.WithValue(ctx, ContextKey("STATUS"), http.StatusOK)
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
 
 func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
+	status := req.Context().Value(ContextKey("STATUS"))
+	if status == nil {
+		status = http.StatusOK
+	}
 	data := req.Context().Value(ContextKey("DATA"))
 	if data == nil {
 		http.Error(w, "can't get context data", http.StatusBadRequest)
@@ -234,11 +240,15 @@ func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(status.(int))
 	w.Write([]byte(str))
 }
 
 func (r *Router) SendJSON(w http.ResponseWriter, req *http.Request) {
+	status := req.Context().Value(ContextKey("STATUS"))
+	if status == nil {
+		status = http.StatusOK
+	}
 	data := req.Context().Value(ContextKey("DATA"))
 	if data == nil {
 		http.Error(w, "can't get context data", http.StatusBadRequest)
@@ -250,7 +260,7 @@ func (r *Router) SendJSON(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(status.(int))
 	w.Write([]byte(str))
 }
 
