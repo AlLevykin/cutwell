@@ -70,7 +70,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRouter(nil)
+			r := NewRouter(nil, nil)
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
@@ -154,7 +154,7 @@ func TestRouter_SendJson(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRouter(nil)
+			r := NewRouter(nil, nil)
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
@@ -223,7 +223,7 @@ func TestRouter_ReadBody(t *testing.T) {
 			} else {
 				body = &mockReader{}
 			}
-			r := NewRouter(nil)
+			r := NewRouter(nil, nil)
 			w := httptest.NewRecorder()
 			br := httptest.NewRequest(http.MethodPost, "/", body)
 			wantHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -308,7 +308,7 @@ func TestRouter_UnmarshalData(t *testing.T) {
 					t.Error("wrong DATA")
 				}
 			})
-			r := NewRouter(nil)
+			r := NewRouter(nil, nil)
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {
@@ -376,7 +376,7 @@ func TestRouter_MarshalData(t *testing.T) {
 					t.Error("wrong DATA")
 				}
 			})
-			r := NewRouter(nil)
+			r := NewRouter(nil, nil)
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			if tt.args.data != nil {

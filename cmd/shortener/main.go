@@ -6,6 +6,7 @@ import (
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/AlLevykin/cutwell/internal/api/server"
 	"github.com/AlLevykin/cutwell/internal/app/store"
+	"github.com/AlLevykin/cutwell/internal/utils"
 	"github.com/caarlos0/env/v6"
 	"os"
 	"os/signal"
@@ -41,7 +42,8 @@ func main() {
 		},
 		cfg.FileStoragePath)
 	defer ls.Save()
-	r := handler.NewRouter(ls)
+	decoder := utils.NewDecoder()
+	r := handler.NewRouter(ls, decoder)
 	srv := server.NewServer(
 		server.Config{
 			Addr:              cfg.Addr,

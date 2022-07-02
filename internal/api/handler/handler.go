@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"github.com/AlLevykin/cutwell/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
@@ -36,13 +37,15 @@ type Item struct {
 
 type Router struct {
 	*chi.Mux
-	ls Links
+	ls      Links
+	decoder *utils.Decoder
 }
 
-func NewRouter(ls Links) *Router {
+func NewRouter(ls Links, d *utils.Decoder) *Router {
 	r := &Router{
-		Mux: chi.NewRouter(),
-		ls:  ls,
+		Mux:     chi.NewRouter(),
+		ls:      ls,
+		decoder: d,
 	}
 	r.Get("/{key}", r.Redirect)
 	r.With(r.CheckSession, r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
@@ -53,13 +56,16 @@ func NewRouter(ls Links) *Router {
 
 func (r *Router) CheckSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		uid := "00000001"
+		
+		uid := utils.RandString(6)
 		if cookie, err := req.Cookie("cutwell-session"); err != nil {
 			cookie = &http.Cookie{
 				Name:  "cutwell-session",
 				Value: uid,
+				Path:  "/",
 			}
 			http.SetCookie(w, cookie)
+			req.AddCookie(cookie)
 		} else {
 			uid = cookie.Value
 		}
