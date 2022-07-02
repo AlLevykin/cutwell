@@ -19,7 +19,7 @@ type config struct {
 	Addr            string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
 	BaseURL         string `env:"BASE_URL" envDefault:"127.0.0.1:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
-	DbDSN           string `env:"DATABASE_DSN" envDefault:""`
+	DBDSN           string `env:"DATABASE_DSN" envDefault:""`
 }
 
 func ServeApp(ctx context.Context, wg *sync.WaitGroup, srv *server.Server) {
@@ -35,7 +35,7 @@ func main() {
 	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server address")
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base url")
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
-	flag.StringVar(&cfg.DbDSN, "d", cfg.DbDSN, "database DSN")
+	flag.StringVar(&cfg.DBDSN, "d", cfg.DBDSN, "database DSN")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
@@ -43,7 +43,7 @@ func main() {
 
 	decoder := utils.NewDecoder()
 
-	if len(cfg.DbDSN) == 0 {
+	if len(cfg.DBDSN) == 0 {
 		ls := store.NewLinkStore(
 			store.Config{
 				KeyLength: 9,
@@ -53,7 +53,7 @@ func main() {
 		defer ls.Save()
 		r = handler.NewRouter(ls, decoder)
 	} else {
-		ls := pg.NewLinkStore(cfg.DbDSN)
+		ls := pg.NewLinkStore(cfg.DBDSN)
 		defer ls.Close()
 		r = handler.NewRouter(ls, decoder)
 	}
