@@ -20,6 +20,7 @@ type Links interface {
 	Create(ctx context.Context, lnk string, u string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
 	GetURLList(ctx context.Context, user string) ([]Item, error)
+	Ping(ctx context.Context) error
 }
 
 type Link struct {
@@ -51,12 +52,13 @@ func NewRouter(ls Links, d *utils.Decoder) *Router {
 	r.With(r.CheckSession, r.ReadBody, r.GetShortLink, r.Compress).Post("/", r.SendPlainText)
 	r.With(r.CheckSession, r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
 	r.With(r.CheckSession, r.GetUrls, r.Compress).Get("/api/user/urls", r.SendJSON)
+	r.Get("/ping", r.Ping)
 	return r
 }
 
 func (r *Router) CheckSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		
+
 		uid := utils.RandString(6)
 		if cookie, err := req.Cookie("cutwell-session"); err != nil {
 			cookie = &http.Cookie{
@@ -270,4 +272,13 @@ func (r *Router) Redirect(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Location", lnk)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func (r *Router) Ping(w http.ResponseWriter, req *http.Request) {
+	err := r.ls.Ping(req.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

@@ -33,6 +33,10 @@ func NewLinkStore(c Config, fileName string) *LinkStore {
 	}
 }
 
+func (ls *LinkStore) Ping(ctx context.Context) error {
+	return nil
+}
+
 func (ls *LinkStore) Host() string {
 	u, err := url.Parse(ls.BaseURL)
 	if err != nil {
