@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 type LinkStore struct {
