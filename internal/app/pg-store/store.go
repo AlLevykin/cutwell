@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/lib/pq"
 )
@@ -16,6 +17,7 @@ func NewLinkStore(dsn string) *LinkStore {
 		dsn)
 	if err != nil {
 		// log
+		fmt.Println(err)
 	}
 	return &LinkStore{
 		db,
