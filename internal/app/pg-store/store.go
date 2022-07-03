@@ -3,21 +3,30 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/lib/pq"
+	"github.com/pressly/goose/v3"
 )
+
+//go:embed migrations/*.sql
+var embedMigrations embed.FS
 
 type LinkStore struct {
 	db *sql.DB
 }
 
 func NewLinkStore(dsn string) *LinkStore {
-	db, err := sql.Open("postgres",
-		dsn)
+	goose.SetBaseFS(embedMigrations)
+	db, err := goose.OpenDBWithDriver("postgres", dsn)
 	if err != nil {
 		// log
 		fmt.Println(err)
+	}
+	if err := goose.Up(db, "migrations"); err != nil {
+		db.Close()
+		db = nil
 	}
 	return &LinkStore{
 		db,
@@ -51,6 +60,9 @@ func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, 
 }
 
 func (ls *LinkStore) Close() error {
+	if err := ls.Ping(context.Background()); err != nil {
+		return err
+	}
 	if err := ls.db.Close(); err != nil {
 		return err
 	}
