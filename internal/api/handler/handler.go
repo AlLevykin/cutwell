@@ -21,6 +21,7 @@ type Links interface {
 	Get(ctx context.Context, key string) (string, error)
 	GetURLList(ctx context.Context, user string) ([]Item, error)
 	Ping(ctx context.Context) error
+	Batch(ctx context.Context, b []BatchItem, u string) ([]ResultItem, error)
 }
 
 type Link struct {
@@ -34,6 +35,16 @@ type ShortenLink struct {
 type Item struct {
 	ShortURL string `json:"short_url"`
 	URL      string `json:"original_url"`
+}
+
+type BatchItem struct {
+	ID  string `json:"correlation_id"`
+	URL string `json:"original_url"`
+}
+
+type ResultItem struct {
+	ID  string `json:"correlation_id"`
+	URL string `json:"short_url"`
 }
 
 type Router struct {
@@ -53,6 +64,7 @@ func NewRouter(ls Links, d *utils.Decoder) *Router {
 	r.With(r.CheckSession, r.ReadBody, r.UnmarshalData, r.GetShortLink, r.MarshalData, r.Compress).Post("/api/shorten", r.SendJSON)
 	r.With(r.CheckSession, r.GetUrls, r.Compress).Get("/api/user/urls", r.SendJSON)
 	r.Get("/ping", r.Ping)
+	r.With(r.CheckSession, r.ReadBody, r.Batch, r.Compress).Post("/api/shorten/batch", r.SendJSON)
 	return r
 }
 
@@ -219,6 +231,44 @@ func (r *Router) GetUrls(next http.Handler) http.Handler {
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
 		ctx = context.WithValue(ctx, ContextKey("STATUS"), http.StatusOK)
+		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
+func (r *Router) Batch(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		uid, ok := req.Context().Value(ContextKey("USERID")).(string)
+		if !ok || len(uid) == 0 {
+			http.Error(w, "can't get user id", http.StatusInternalServerError)
+			return
+		}
+		data := req.Context().Value(ContextKey("DATA"))
+		if data == nil {
+			http.Error(w, "can't get context data", http.StatusInternalServerError)
+			return
+		}
+		str, ok := data.(string)
+		if !ok {
+			http.Error(w, "can't get context data", http.StatusInternalServerError)
+			return
+		}
+		var batch []BatchItem
+		err := json.Unmarshal([]byte(str), &batch)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res, err := r.ls.Batch(req.Context(), batch, uid)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json, err := json.Marshal(&res)
+		if err != nil {
+			http.Error(w, "can't marshal data", http.StatusInternalServerError)
+			return
+		}
+		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }

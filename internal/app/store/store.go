@@ -112,6 +112,10 @@ func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, 
 	return result, nil
 }
 
+func (ls *LinkStore) Batch(ctx context.Context, b []handler.BatchItem, u string) ([]handler.ResultItem, error) {
+	return nil, nil
+}
+
 func (ls *LinkStore) Save() error {
 	if err := MapToFile(ls.Mem, ls.File); err != nil {
 		return err

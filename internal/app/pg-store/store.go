@@ -134,6 +134,41 @@ func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, 
 	return result, nil
 }
 
+func (ls *LinkStore) Batch(ctx context.Context, b []handler.BatchItem, u string) ([]handler.ResultItem, error) {
+	tx, err := ls.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO urls(id, lnk, usr) VALUES($1,$2,$3)")
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]handler.ResultItem, 0, len(b))
+
+	for _, i := range b {
+		key := utils.RandString(ls.KeyLength)
+		if _, err = stmt.ExecContext(ctx, key, i.URL, u); err != nil {
+			return nil, err
+		}
+		shortURL := &url.URL{
+			Scheme: "http",
+			Host:   ls.Host(),
+			Path:   key,
+		}
+		res = append(res, handler.ResultItem{ID: i.ID, URL: shortURL.String()})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (ls *LinkStore) Close() error {
 	if err := ls.Ping(context.Background()); err != nil {
 		return err
