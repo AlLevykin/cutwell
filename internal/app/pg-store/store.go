@@ -85,6 +85,10 @@ func (ls *LinkStore) Get(ctx context.Context, key string) (string, error) {
 		return link, nil
 	}
 
+	if err = rows.Err(); err != nil {
+		return "", err
+	}
+
 	return "", sql.ErrNoRows
 }
 
@@ -117,6 +121,10 @@ func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, 
 				URL:      link,
 			},
 		)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	if len(result) == 0 {
