@@ -269,6 +269,7 @@ func (r *Router) Batch(next http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), string(json))
+		ctx = context.WithValue(ctx, ContextKey("STATUS"), http.StatusCreated)
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }
