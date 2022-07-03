@@ -53,7 +53,12 @@ func main() {
 		defer ls.Save()
 		r = handler.NewRouter(ls, decoder)
 	} else {
-		ls := pg.NewLinkStore(cfg.DBDSN)
+		ls := pg.NewLinkStore(
+			store.Config{
+				KeyLength: 9,
+				BaseURL:   cfg.BaseURL,
+			},
+			cfg.DBDSN)
 		defer ls.Close()
 		r = handler.NewRouter(ls, decoder)
 	}
