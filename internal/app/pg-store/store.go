@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/AlLevykin/cutwell/internal/app/store"
 	"github.com/AlLevykin/cutwell/internal/utils"
+	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"net/url"
@@ -63,10 +65,42 @@ func (ls *LinkStore) Create(ctx context.Context, lnk string, u string) (string, 
 	_, err := ls.db.ExecContext(ctx,
 		"INSERT INTO urls(id, lnk, usr) VALUES($1,$2,$3)",
 		key, lnk, u)
+
 	if err != nil {
+		var pqerr *pq.Error
+		if errors.As(err, &pqerr) && pqerr.Code == pgerrcode.UniqueViolation {
+			key, err = ls.Find(ctx, lnk)
+			if err != nil {
+				return "", err
+			}
+			return key, nil
+		}
 		return "", err
 	}
 	return key, nil
+}
+
+func (ls *LinkStore) Find(ctx context.Context, lnk string) (string, error) {
+	rows, err := ls.db.QueryContext(ctx, "SELECT id from urls where lnk=$1", lnk)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var link string
+		err = rows.Scan(&link)
+		if err != nil {
+			return "", err
+		}
+		return link, nil
+	}
+
+	if err = rows.Err(); err != nil {
+		return "", err
+	}
+
+	return "", sql.ErrNoRows
 }
 
 func (ls *LinkStore) Get(ctx context.Context, key string) (string, error) {
