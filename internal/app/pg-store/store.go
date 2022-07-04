@@ -4,12 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"embed"
-	"errors"
 	"fmt"
 	"github.com/AlLevykin/cutwell/internal/api/handler"
 	"github.com/AlLevykin/cutwell/internal/app/store"
 	"github.com/AlLevykin/cutwell/internal/utils"
-	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"net/url"
@@ -67,14 +65,6 @@ func (ls *LinkStore) Create(ctx context.Context, lnk string, u string) (string, 
 		key, lnk, u)
 
 	if err != nil {
-		var pqerr *pq.Error
-		if errors.As(err, &pqerr) && pqerr.Code == pgerrcode.UniqueViolation {
-			key, err = ls.Find(ctx, lnk)
-			if err != nil {
-				return "", err
-			}
-			return key, nil
-		}
 		return "", err
 	}
 	return key, nil

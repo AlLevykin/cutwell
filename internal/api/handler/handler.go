@@ -4,8 +4,11 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/AlLevykin/cutwell/internal/utils"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgerrcode"
+	"github.com/lib/pq"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,6 +25,7 @@ type Links interface {
 	GetURLList(ctx context.Context, user string) ([]Item, error)
 	Ping(ctx context.Context) error
 	Batch(ctx context.Context, b []BatchItem, u string) ([]ResultItem, error)
+	Find(ctx context.Context, lnk string) (string, error)
 }
 
 type Link struct {
@@ -162,6 +166,7 @@ func (r *Router) UnmarshalData(next http.Handler) http.Handler {
 
 func (r *Router) GetShortLink(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		s := http.StatusCreated
 		uid, ok := req.Context().Value(ContextKey("USERID")).(string)
 		if !ok || len(uid) == 0 {
 			http.Error(w, "can't get user id", http.StatusBadRequest)
@@ -178,9 +183,20 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			return
 		}
 		key, err := r.ls.Create(req.Context(), str, uid)
+
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			var pqerr *pq.Error
+			if errors.As(err, &pqerr) && pqerr.Code == pgerrcode.UniqueViolation {
+				key, err = r.ls.Find(req.Context(), str)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				s = http.StatusConflict
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 		}
 		u := &url.URL{
 			Scheme: "http",
@@ -188,7 +204,7 @@ func (r *Router) GetShortLink(next http.Handler) http.Handler {
 			Path:   key,
 		}
 		ctx := context.WithValue(req.Context(), ContextKey("DATA"), u.String())
-		ctx = context.WithValue(ctx, ContextKey("STATUS"), http.StatusCreated)
+		ctx = context.WithValue(ctx, ContextKey("STATUS"), s)
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }

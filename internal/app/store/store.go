@@ -116,6 +116,10 @@ func (ls *LinkStore) Batch(ctx context.Context, b []handler.BatchItem, u string)
 	return nil, nil
 }
 
+func (ls *LinkStore) Find(ctx context.Context, lnk string) (string, error) {
+	return "", nil
+}
+
 func (ls *LinkStore) Save() error {
 	if err := MapToFile(ls.Mem, ls.File); err != nil {
 		return err
