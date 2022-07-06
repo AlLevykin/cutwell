@@ -20,11 +20,11 @@ type ContextKey string
 
 type Links interface {
 	Host() string
-	Create(ctx context.Context, lnk string, u string) (string, error)
+	Create(ctx context.Context, lnk string, user string) (string, error)
 	Get(ctx context.Context, key string) (string, error)
 	GetURLList(ctx context.Context, user string) ([]Item, error)
 	Ping(ctx context.Context) error
-	Batch(ctx context.Context, b []BatchItem, u string) ([]ResultItem, error)
+	Batch(ctx context.Context, batch []BatchItem, user string) ([]ResultItem, error)
 	Find(ctx context.Context, lnk string) (string, error)
 }
 
@@ -293,20 +293,26 @@ func (r *Router) Batch(next http.Handler) http.Handler {
 func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
 	status := req.Context().Value(ContextKey("STATUS"))
 	if status == nil {
-		status = http.StatusOK
+		http.Error(w, "can't get context data", http.StatusInternalServerError)
+		return
+	}
+	statusInt, ok := status.(int)
+	if !ok {
+		http.Error(w, "can't get context data", http.StatusInternalServerError)
+		return
 	}
 	data := req.Context().Value(ContextKey("DATA"))
 	if data == nil {
-		http.Error(w, "can't get context data", http.StatusBadRequest)
+		http.Error(w, "can't get context data", http.StatusInternalServerError)
 		return
 	}
 	str, ok := data.(string)
 	if !ok {
-		http.Error(w, "can't get context data", http.StatusBadRequest)
+		http.Error(w, "can't get context data", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
-	w.WriteHeader(status.(int))
+	w.WriteHeader(statusInt)
 	w.Write([]byte(str))
 }
 

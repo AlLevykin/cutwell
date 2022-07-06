@@ -10,6 +10,7 @@ import (
 	"github.com/AlLevykin/cutwell/internal/utils"
 	"github.com/lib/pq"
 	"github.com/pressly/goose/v3"
+	"log"
 	"net/url"
 )
 
@@ -58,11 +59,11 @@ func (ls *LinkStore) Host() string {
 	return u.Host
 }
 
-func (ls *LinkStore) Create(ctx context.Context, lnk string, u string) (string, error) {
+func (ls *LinkStore) Create(ctx context.Context, lnk string, user string) (string, error) {
 	key := utils.RandString(ls.KeyLength)
 	_, err := ls.db.ExecContext(ctx,
 		"INSERT INTO urls(id, lnk, usr) VALUES($1,$2,$3)",
-		key, lnk, u)
+		key, lnk, user)
 
 	if err != nil {
 		return "", err
@@ -158,23 +159,27 @@ func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, 
 	return result, nil
 }
 
-func (ls *LinkStore) Batch(ctx context.Context, b []handler.BatchItem, u string) ([]handler.ResultItem, error) {
+func (ls *LinkStore) Batch(ctx context.Context, batch []handler.BatchItem, user string) ([]handler.ResultItem, error) {
 	tx, err := ls.db.Begin()
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Fatalf("batch: unable to rollback: %v", err)
+		}
+	}()
 
 	stmt, err := tx.PrepareContext(ctx, "INSERT INTO urls(id, lnk, usr) VALUES($1,$2,$3)")
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]handler.ResultItem, 0, len(b))
+	res := make([]handler.ResultItem, 0, len(batch))
 
-	for _, i := range b {
+	for _, i := range batch {
 		key := utils.RandString(ls.KeyLength)
-		if _, err = stmt.ExecContext(ctx, key, i.URL, u); err != nil {
+		if _, err = stmt.ExecContext(ctx, key, i.URL, user); err != nil {
 			return nil, err
 		}
 		shortURL := &url.URL{

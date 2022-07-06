@@ -9,6 +9,7 @@ import (
 	"github.com/AlLevykin/cutwell/internal/app/store"
 	"github.com/AlLevykin/cutwell/internal/utils"
 	"github.com/caarlos0/env/v6"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -31,7 +32,9 @@ func ServeApp(ctx context.Context, wg *sync.WaitGroup, srv *server.Server) {
 
 func main() {
 	cfg := config{}
-	env.Parse(&cfg)
+	if err := env.Parse(&cfg); err != nil {
+		log.Println("default configuration used")
+	}
 	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "server address")
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base url")
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
@@ -43,7 +46,7 @@ func main() {
 
 	decoder := utils.NewDecoder()
 
-	if len(cfg.DBDSN) == 0 {
+	if cfg.DBDSN == "" {
 		ls := store.NewLinkStore(
 			store.Config{
 				KeyLength: 9,

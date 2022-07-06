@@ -45,7 +45,7 @@ func (ls *LinkStore) Host() string {
 	return u.Host
 }
 
-func (ls *LinkStore) Create(ctx context.Context, lnk string, u string) (string, error) {
+func (ls *LinkStore) Create(ctx context.Context, lnk string, user string) (string, error) {
 	ls.Lock()
 	defer ls.Unlock()
 
@@ -57,7 +57,7 @@ func (ls *LinkStore) Create(ctx context.Context, lnk string, u string) (string, 
 
 	key := utils.RandString(ls.KeyLength)
 	ls.Mem[key] = lnk
-	ls.Users[key] = u
+	ls.Users[key] = user
 	return key, nil
 }
 
@@ -112,7 +112,7 @@ func (ls *LinkStore) GetURLList(ctx context.Context, u string) ([]handler.Item, 
 	return result, nil
 }
 
-func (ls *LinkStore) Batch(ctx context.Context, b []handler.BatchItem, u string) ([]handler.ResultItem, error) {
+func (ls *LinkStore) Batch(ctx context.Context, batch []handler.BatchItem, user string) ([]handler.ResultItem, error) {
 	return nil, nil
 }
 
