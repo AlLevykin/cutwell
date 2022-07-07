@@ -50,7 +50,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 				0,
 			},
 			want{
-				code:        http.StatusBadRequest,
+				code:        http.StatusInternalServerError,
 				contentType: "text/plain; charset=utf-8",
 				data:        "can't get context data",
 			},
@@ -62,7 +62,7 @@ func TestRouter_SendPlainText(t *testing.T) {
 				0,
 			},
 			want{
-				code:        http.StatusBadRequest,
+				code:        http.StatusInternalServerError,
 				contentType: "text/plain; charset=utf-8",
 				data:        "can't get context data",
 			},
