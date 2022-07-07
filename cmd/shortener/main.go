@@ -53,7 +53,12 @@ func main() {
 				BaseURL:   cfg.BaseURL,
 			},
 			cfg.FileStoragePath)
-		defer ls.Save()
+		defer func(ls *store.LinkStore) {
+			err := ls.Save()
+			if err != nil {
+				log.Printf("link store save error: %v\n", err)
+			}
+		}(ls)
 		r = handler.NewRouter(ls, decoder)
 	} else {
 		ls := pg.NewLinkStore(

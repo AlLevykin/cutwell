@@ -218,7 +218,10 @@ func (r *Router) Compress(next http.Handler) http.Handler {
 
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 		if err != nil {
-			io.WriteString(w, err.Error())
+			if _, errWriteString := io.WriteString(w, err.Error()); errWriteString != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			return
 		}
 		defer gz.Close()
@@ -313,7 +316,11 @@ func (r *Router) SendPlainText(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.WriteHeader(statusInt)
-	w.Write([]byte(str))
+	_, err := w.Write([]byte(str))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (r *Router) SendJSON(w http.ResponseWriter, req *http.Request) {
@@ -333,7 +340,11 @@ func (r *Router) SendJSON(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(status.(int))
-	w.Write([]byte(str))
+	_, err := w.Write([]byte(str))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (r *Router) Redirect(w http.ResponseWriter, req *http.Request) {

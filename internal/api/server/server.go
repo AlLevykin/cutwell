@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 )
@@ -34,10 +35,18 @@ func NewServer(c Config, h http.Handler) *Server {
 
 func (s *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), s.ct)
-	s.srv.Shutdown(ctx)
+	err := s.srv.Shutdown(ctx)
+	if err != nil {
+		log.Printf("server shutdown error: %v\n", err)
+	}
 	cancel()
 }
 
 func (s *Server) Start() {
-	go s.srv.ListenAndServe()
+	go func() {
+		err := s.srv.ListenAndServe()
+		if err != nil {
+			log.Fatalf("server start error: %v\n", err)
+		}
+	}()
 }
