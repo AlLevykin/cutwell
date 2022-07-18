@@ -211,7 +211,7 @@ func (ls *LinkStore) Delete(ctx context.Context, urls []string, user string) err
 		}
 	}()
 
-	stmt, err := tx.PrepareContext(ctx, "UPDATE urls SET removed = true WHERE id = '$1' AND usr = '$2'")
+	stmt, err := tx.PrepareContext(ctx, "UPDATE urls SET removed = true WHERE id = $1 AND usr = $2")
 	if err != nil {
 		return err
 	}
