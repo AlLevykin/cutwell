@@ -12,6 +12,7 @@ import (
 	"github.com/pressly/goose/v3"
 	"log"
 	"net/url"
+	"sync"
 )
 
 //go:embed migrations/*.sql
@@ -95,7 +96,7 @@ func (ls *LinkStore) Find(ctx context.Context, lnk string) (string, error) {
 }
 
 func (ls *LinkStore) Get(ctx context.Context, key string) (string, error) {
-	rows, err := ls.db.QueryContext(ctx, "SELECT lnk from urls where id=$1", key)
+	rows, err := ls.db.QueryContext(ctx, "SELECT lnk FROM urls WHERE id=$1 AND removed = false", key)
 	if err != nil {
 		return "", err
 	}
@@ -196,6 +197,78 @@ func (ls *LinkStore) Batch(ctx context.Context, batch []handler.BatchItem, user 
 	}
 
 	return res, nil
+}
+
+func (ls *LinkStore) Delete(ctx context.Context, urls []string, user string) error {
+
+	tx, err := ls.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Fatalf("batch: unable to rollback: %v", err)
+		}
+	}()
+
+	stmt, err := tx.PrepareContext(ctx, "UPDATE urls SET removed = true WHERE id = $1 AND usr = $2")
+	if err != nil {
+		return err
+	}
+
+	worker := func(url string) chan error {
+		ch := make(chan error)
+		go func() {
+			_, err := stmt.ExecContext(ctx, url, user)
+			if err != nil {
+				log.Printf("delete: unable to update table: %v", err)
+			}
+			ch <- err
+			close(ch)
+		}()
+		return ch
+	}
+
+	fanIn := func(chans []chan error) chan error {
+		res := make(chan error)
+		var wg sync.WaitGroup
+		wg.Add(len(chans))
+
+		for _, ch := range chans {
+			go func(ch chan error) {
+				defer wg.Done()
+				for err := range ch {
+					res <- err
+				}
+			}(ch)
+		}
+
+		go func() {
+			wg.Wait()
+			close(res)
+		}()
+		return res
+	}
+
+	var chans []chan error
+	for _, url := range urls {
+		ch := worker(url)
+		chans = append(chans, ch)
+	}
+
+	ch := fanIn(chans)
+	for err := range ch {
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ls *LinkStore) Close() error {
