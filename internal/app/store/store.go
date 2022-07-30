@@ -33,6 +33,10 @@ func NewLinkStore(c Config, fileName string) *LinkStore {
 	}
 }
 
+func (ls *LinkStore) Delete(ctx context.Context, urls []string, user string) error {
+	return nil
+}
+
 func (ls *LinkStore) Ping(ctx context.Context) error {
 	return nil
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"github.com/AlLevykin/cutwell/internal/utils"
@@ -26,6 +27,7 @@ type Links interface {
 	Ping(ctx context.Context) error
 	Batch(ctx context.Context, batch []BatchItem, user string) ([]ResultItem, error)
 	Find(ctx context.Context, lnk string) (string, error)
+	Delete(ctx context.Context, urls []string, user string) error
 }
 
 type Link struct {
@@ -69,6 +71,7 @@ func NewRouter(ls Links, d *utils.Decoder) *Router {
 	r.With(r.CheckSession, r.GetUrls, r.Compress).Get("/api/user/urls", r.SendJSON)
 	r.Get("/ping", r.Ping)
 	r.With(r.CheckSession, r.ReadBody, r.Batch, r.Compress).Post("/api/shorten/batch", r.SendJSON)
+	r.With(r.CheckSession, r.ReadBody).Delete("/api/user/urls", r.DeleteUrls)
 	return r
 }
 
@@ -350,6 +353,10 @@ func (r *Router) SendJSON(w http.ResponseWriter, req *http.Request) {
 func (r *Router) Redirect(w http.ResponseWriter, req *http.Request) {
 	key := path.Base(req.URL.Path)
 	lnk, err := r.ls.Get(req.Context(), key)
+	if err == sql.ErrNoRows {
+		http.Error(w, err.Error(), http.StatusGone)
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -365,4 +372,34 @@ func (r *Router) Ping(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (r *Router) DeleteUrls(w http.ResponseWriter, req *http.Request) {
+	uid, ok := req.Context().Value(ContextKey("USERID")).(string)
+	if !ok || len(uid) == 0 {
+		http.Error(w, "can't get user id", http.StatusInternalServerError)
+		return
+	}
+	data := req.Context().Value(ContextKey("DATA"))
+	if data == nil {
+		http.Error(w, "can't get context data", http.StatusInternalServerError)
+		return
+	}
+	str, ok := data.(string)
+	if !ok {
+		http.Error(w, "can't get context data", http.StatusInternalServerError)
+		return
+	}
+	var urls []string
+	err := json.Unmarshal([]byte(str), &urls)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = r.ls.Delete(req.Context(), urls, uid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
 }
